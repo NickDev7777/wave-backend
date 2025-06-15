@@ -1,3 +1,4 @@
+const jwt = require('jsonwebtoken');
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
@@ -22,6 +23,17 @@ const User = mongoose.model('User', new mongoose.Schema({
 }));
 
 // Ruta de registro
+
+app.post('/api/login', async (req, res) => {
+  const { email, password } = req.body;
+  const user = await User.findOne({ email });
+  if (!user || user.password !== password)
+    return res.status(401).json({ message: 'Credenciales inválidas' });
+
+  const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
+  res.json({ message: 'Login exitoso', token });
+});
+
 app.post('/api/register', async (req, res) => {
   try {
     const { username, email, password } = req.body;
