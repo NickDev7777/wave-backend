@@ -1,20 +1,40 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
-const dotenv = require('dotenv');
-const authRoutes = require('./routes/auth');
-
-dotenv.config();
-
 const app = express();
+
+// Middleware
 app.use(cors());
 app.use(express.json());
 
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log('MongoDB conectado'))
+// Conexión a MongoDB
+mongoose.connect('mongodb+srv://nickchitty:324EfcIP9T0vMia4@nwordauth.wrtd7cg.mongodb.net/NWordAuth?retryWrites=true&w=majority', {
+  useNewUrlParser: true,
+  useUnifiedTopology: true
+}).then(() => console.log("MongoDB conectado"))
   .catch(err => console.error(err));
 
-app.use('/api/auth', authRoutes);
+// Modelo de usuario
+const User = mongoose.model('User', new mongoose.Schema({
+  username: String,
+  email: String,
+  password: String,
+}));
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Servidor corriendo en el puerto ${PORT}`));
+// Ruta de registro
+app.post('/api/register', async (req, res) => {
+  try {
+    const { username, email, password } = req.body;
+    const existing = await User.findOne({ email });
+    if (existing) return res.status(400).json({ message: 'Correo ya en uso' });
+
+    const user = new User({ username, email, password });
+    await user.save();
+    res.status(200).json({ message: 'Usuario registrado' });
+  } catch (err) {
+    res.status(500).json({ message: 'Error al registrar' });
+  }
+});
+
+// Iniciar servidor
+app.listen(3000, () => console.log("Servidor corriendo en el puerto 3000"));
